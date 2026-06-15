@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Budget Tracker</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --surface: #1a2028;
+    --surface-2: #232b35;
+    --border: #2d3744;
+    --text: #e8eaed;
+    --text-dim: #8b95a3;
+    --text-faint: #5a6573;
+    --accent: #4ade80;
+    --accent-dim: #166534;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --primary: #60a5fa;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+font-family: -apple-system, BlinkMacSystemFont, ‘SF Pro Display’, ‘Inter’, system-ui, sans-serif;
+background: var(–bg);
+color: var(–text);
+min-height: 100vh;
+line-height: 1.5;
+-webkit-font-smoothing: antialiased;
+}
+
+.app {
+max-width: 720px;
+margin: 0 auto;
+padding: 16px;
+padding-bottom: 80px;
+}
+
+/* Header */
+.header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 20px;
+padding: 8px 0;
+}
+
+.header h1 {
+font-size: 22px;
+font-weight: 600;
+letter-spacing: -0.02em;
+}
+
+.month-nav {
+display: flex;
+align-items: center;
+gap: 12px;
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 6px 12px;
+}
+
+.month-nav button {
+background: transparent;
+border: none;
+color: var(–text-dim);
+cursor: pointer;
+font-size: 18px;
+padding: 2px 6px;
+border-radius: 4px;
+}
+
+.month-nav button:hover {
+background: var(–surface-2);
+color: var(–text);
+}
+
+.month-nav .current-month {
+font-size: 14px;
+font-weight: 500;
+min-width: 110px;
+text-align: center;
+}
+
+/* Summary Card */
+.summary {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 12px;
+padding: 20px;
+margin-bottom: 20px;
+}
+
+.summary-row {
+display: flex;
+justify-content: space-between;
+align-items: baseline;
+padding: 8px 0;
+}
+
+.summary-row + .summary-row {
+border-top: 1px solid var(–border);
+}
+
+.summary-label {
+font-size: 13px;
+color: var(–text-dim);
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+
+.summary-value {
+font-size: 18px;
+font-weight: 600;
+font-variant-numeric: tabular-nums;
+}
+
+.summary-value.income { color: var(–accent); }
+.summary-value.spent { color: var(–text); }
+.summary-value.remaining { font-size: 22px; }
+.summary-value.remaining.positive { color: var(–accent); }
+.summary-value.remaining.negative { color: var(–danger); }
+
+/* Tabs */
+.tabs {
+display: flex;
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 4px;
+margin-bottom: 16px;
+}
+
+.tab {
+flex: 1;
+padding: 10px;
+background: transparent;
+border: none;
+color: var(–text-dim);
+font-size: 14px;
+font-weight: 500;
+cursor: pointer;
+border-radius: 6px;
+transition: all 0.15s ease;
+}
+
+.tab.active {
+background: var(–surface-2);
+color: var(–text);
+}
+
+/* Buckets */
+.bucket {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 16px;
+margin-bottom: 12px;
+transition: border-color 0.2s ease;
+}
+
+.bucket-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 12px;
+cursor: pointer;
+}
+
+.bucket-title-group {
+display: flex;
+align-items: center;
+gap: 10px;
+flex: 1;
+}
+
+.bucket-icon {
+font-size: 18px;
+}
+
+.bucket-name {
+font-weight: 600;
+font-size: 15px;
+}
+
+.rollover-badge {
+background: var(–accent-dim);
+color: var(–accent);
+font-size: 10px;
+padding: 2px 6px;
+border-radius: 3px;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+font-weight: 600;
+}
+
+.bucket-amounts {
+font-size: 14px;
+color: var(–text-dim);
+font-variant-numeric: tabular-nums;
+text-align: right;
+}
+
+.bucket-amounts .spent {
+color: var(–text);
+font-weight: 600;
+}
+
+/* Progress bar */
+.progress {
+height: 6px;
+background: var(–surface-2);
+border-radius: 3px;
+overflow: hidden;
+margin-bottom: 6px;
+}
+
+.progress-bar {
+height: 100%;
+background: var(–accent);
+border-radius: 3px;
+transition: width 0.3s ease;
+}
+
+.progress-bar.warning { background: var(–warning); }
+.progress-bar.danger { background: var(–danger); }
+
+.progress-meta {
+display: flex;
+justify-content: space-between;
+font-size: 12px;
+color: var(–text-faint);
+margin-bottom: 4px;
+}
+
+/* Bucket details (expanded) */
+.bucket-details {
+margin-top: 14px;
+padding-top: 14px;
+border-top: 1px solid var(–border);
+display: none;
+}
+
+.bucket.expanded .bucket-details {
+display: block;
+}
+
+.expense-list {
+margin-bottom: 10px;
+}
+
+.expense-item {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 8px 0;
+border-bottom: 1px solid var(–border);
+font-size: 14px;
+}
+
+.expense-item:last-child {
+border-bottom: none;
+}
+
+.expense-info {
+flex: 1;
+}
+
+.expense-note {
+color: var(–text);
+}
+
+.expense-meta {
+font-size: 12px;
+color: var(–text-faint);
+margin-top: 2px;
+}
+
+.expense-amount {
+font-variant-numeric: tabular-nums;
+font-weight: 600;
+margin-right: 10px;
+}
+
+.delete-btn {
+background: transparent;
+border: none;
+color: var(–text-faint);
+cursor: pointer;
+font-size: 16px;
+padding: 4px 8px;
+}
+
+.delete-btn:hover {
+color: var(–danger);
+}
+
+/* Add expense form */
+.add-expense {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+margin-top: 10px;
+}
+
+.add-expense input {
+background: var(–surface-2);
+border: 1px solid var(–border);
+color: var(–text);
+padding: 10px 12px;
+border-radius: 6px;
+font-size: 14px;
+font-family: inherit;
+}
+
+.add-expense input::placeholder {
+color: var(–text-faint);
+}
+
+.add-expense input:focus {
+outline: none;
+border-color: var(–primary);
+}
+
+.add-expense .note-input {
+grid-column: 1 / -1;
+}
+
+.add-expense button {
+grid-column: 1 / -1;
+background: var(–primary);
+color: var(–bg);
+border: none;
+padding: 10px;
+border-radius: 6px;
+font-size: 14px;
+font-weight: 600;
+cursor: pointer;
+}
+
+.add-expense button:hover {
+opacity: 0.9;
+}
+
+.bucket-config {
+display: flex;
+gap: 8px;
+align-items: center;
+margin-top: 12px;
+padding-top: 12px;
+border-top: 1px solid var(–border);
+flex-wrap: wrap;
+}
+
+.bucket-config label {
+font-size: 12px;
+color: var(–text-dim);
+display: flex;
+align-items: center;
+gap: 6px;
+}
+
+.bucket-config input[type=“number”] {
+background: var(–surface-2);
+border: 1px solid var(–border);
+color: var(–text);
+padding: 6px 8px;
+border-radius: 4px;
+font-size: 13px;
+width: 100px;
+font-family: inherit;
+}
+
+.bucket-config input[type=“checkbox”] {
+accent-color: var(–accent);
+}
+
+.bucket-config .delete-bucket {
+margin-left: auto;
+color: var(–danger);
+background: transparent;
+border: 1px solid var(–border);
+padding: 4px 10px;
+border-radius: 4px;
+font-size: 12px;
+cursor: pointer;
+}
+
+/* Add bucket button */
+.add-bucket {
+width: 100%;
+background: transparent;
+border: 1px dashed var(–border);
+color: var(–text-dim);
+padding: 14px;
+border-radius: 10px;
+font-size: 14px;
+cursor: pointer;
+margin-top: 8px;
+font-family: inherit;
+}
+
+.add-bucket:hover {
+border-color: var(–primary);
+color: var(–primary);
+}
+
+/* Settings */
+.settings-section {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 16px;
+margin-bottom: 12px;
+}
+
+.settings-section h3 {
+font-size: 14px;
+color: var(–text-dim);
+text-transform: uppercase;
+letter-spacing: 0.05em;
+margin-bottom: 12px;
+}
+
+.settings-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 8px 0;
+}
+
+.settings-row label {
+font-size: 14px;
+}
+
+.settings-row input {
+background: var(–surface-2);
+border: 1px solid var(–border);
+color: var(–text);
+padding: 8px 10px;
+border-radius: 6px;
+font-size: 14px;
+width: 140px;
+text-align: right;
+font-variant-numeric: tabular-nums;
+font-family: inherit;
+}
+
+/* Compare view */
+.compare-row {
+display: grid;
+grid-template-columns: 2fr 1fr 1fr 1fr;
+padding: 10px 12px;
+border-bottom: 1px solid var(–border);
+font-size: 13px;
+align-items: center;
+}
+
+.compare-header {
+background: var(–surface-2);
+color: var(–text-dim);
+text-transform: uppercase;
+letter-spacing: 0.05em;
+font-size: 11px;
+font-weight: 600;
+}
+
+.compare-row .num {
+text-align: right;
+font-variant-numeric: tabular-nums;
+}
+
+.compare-table {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 10px;
+overflow: hidden;
+}
+
+/* Empty state */
+.empty-state {
+text-align: center;
+padding: 40px 20px;
+color: var(–text-dim);
+}
+
+/* Toast */
+.toast {
+position: fixed;
+bottom: 24px;
+left: 50%;
+transform: translateX(-50%) translateY(100px);
+background: var(–surface-2);
+border: 1px solid var(–border);
+color: var(–text);
+padding: 12px 20px;
+border-radius: 8px;
+font-size: 14px;
+transition: transform 0.3s ease;
+z-index: 100;
+box-shadow: var(–shadow);
+}
+
+.toast.show {
+transform: translateX(-50%) translateY(0);
+}
+
+/* Loading */
+.loading {
+text-align: center;
+padding: 40px;
+color: var(–text-dim);
+}
+
+/* Sub-categories */
+.sub-categories {
+margin-top: 8px;
+padding-left: 12px;
+border-left: 2px solid var(–border);
+}
+
+.sub-cat {
+font-size: 12px;
+color: var(–text-faint);
+padding: 2px 0;
+}
+
+@media (max-width: 480px) {
+.app { padding: 12px; }
+.header h1 { font-size: 18px; }
+.summary-value.remaining { font-size: 20px; }
+.compare-row { grid-template-columns: 2fr 1fr 1fr; }
+.compare-row .col-budget { display: none; }
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>Budget</h1>
+    <div class="month-nav">
+      <button id="prev-month">‹</button>
+      <span class="current-month" id="current-month">Loading...</span>
+      <button id="next-month">›</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summary">
+    <div class="summary-row">
+      <span class="summary-label">Income</span>
+      <span class="summary-value income" id="income-display">$0</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Spent</span>
+      <span class="summary-value spent" id="spent-display">$0</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Remaining</span>
+      <span class="summary-value remaining" id="remaining-display">$0</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="buckets">Buckets</button>
+    <button class="tab" data-view="compare">Compare</button>
+    <button class="tab" data-view="settings">Setup</button>
+  </div>
+
+  <div id="content">
+    <div class="loading">Loading your budget...</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULT_BUCKETS = [
+  { id: 'rent', name: 'Rent', icon: '🏠', budget: 2800, rollover: false, subCats: ['Rent'] },
+  { id: 'utilities', name: 'Utilities & Bills', icon: '💡', budget: 500, rollover: false, subCats: ['Electric', 'Internet', 'Phone'] },
+  { id: 'commute', name: 'Commute', icon: '🚇', budget: 200, rollover: false, subCats: ['PATH', 'Subway', 'Cabs'] },
+  { id: 'food', name: 'Food & Groceries', icon: '🛒', budget: 400, rollover: true, subCats: ['Groceries', 'Coffee'] },
+  { id: 'weekends', name: 'Weekend Outings', icon: '🍽️', budget: 1000, rollover: true, subCats: ['Restaurants', 'Bars', 'Activities'] },
+  { id: 'shopping', name: 'Shopping', icon: '🛍️', budget: 200, rollover: true, subCats: ['Clothing', 'Misc'] },
+  { id: 'other', name: 'Other / One-off', icon: '✦', budget: 200, rollover: false, subCats: [] }
+];
+
+const DEFAULT_INCOME = 5700;
+
+let state = {
+  currentMonth: getCurrentMonthKey(),
+  income: DEFAULT_INCOME,
+  buckets: DEFAULT_BUCKETS,
+  expenses: {},
+  view: 'buckets',
+  expandedBucket: null
+};
+
+function getCurrentMonthKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function monthKeyToLabel(key) {
+  const [year, month] = key.split('-').map(Number);
+  const date = new Date(year, month - 1, 1);
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function shiftMonth(key, delta) {
+  const [year, month] = key.split('-').map(Number);
+  const date = new Date(year, month - 1 + delta, 1);
+  return getCurrentMonthKey(date);
+}
+
+function formatMoney(amount) {
+  const sign = amount < 0 ? '-' : '';
+  const abs = Math.abs(amount);
+  return `${sign}$${abs.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+// Storage — uses localStorage for reliable persistence on phone/browser
+const STORAGE_KEY = 'budget-state-v1';
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      state.income = saved.income !== undefined ? saved.income : state.income;
+      state.buckets = saved.buckets || state.buckets;
+      state.expenses = saved.expenses || {};
+    }
+  } catch (e) {
+    console.log('No saved state or load error, starting fresh');
+  }
+}
+
+function saveState() {
+  try {
+    const toSave = {
+      income: state.income,
+      buckets: state.buckets,
+      expenses: state.expenses
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (e) {
+    console.error('Save failed:', e);
+    showToast('Save failed — storage may be full');
+  }
+}
+
+function exportData() {
+  const toSave = {
+    income: state.income,
+    buckets: state.buckets,
+    expenses: state.expenses,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(toSave, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `budget-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup downloaded');
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.income !== undefined) state.income = data.income;
+      if (data.buckets) state.buckets = data.buckets;
+      if (data.expenses) state.expenses = data.expenses;
+      saveState();
+      render();
+      showToast('Data imported');
+    } catch (err) {
+      showToast('Invalid backup file');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Calculations
+function getMonthExpenses(monthKey) {
+  return state.expenses[monthKey] || {};
+}
+
+function getBucketSpent(monthKey, bucketId) {
+  const monthExp = getMonthExpenses(monthKey);
+  const items = monthExp[bucketId] || [];
+  return items.reduce((sum, e) => sum + e.amount, 0);
+}
+
+function getRolloverAmount(monthKey, bucketId, depth = 0) {
+  // Prevent infinite recursion — only look back up to 12 months
+  if (depth > 12) return 0;
+
+  const bucket = state.buckets.find(b => b.id === bucketId);
+  if (!bucket || !bucket.rollover) return 0;
+
+  const prevMonth = shiftMonth(monthKey, -1);
+
+  // Only roll over if previous month actually has expense data
+  const hasPrevActivity = state.expenses[prevMonth] &&
+                         state.expenses[prevMonth][bucketId] &&
+                         state.expenses[prevMonth][bucketId].length > 0;
+  if (!hasPrevActivity) return 0;
+
+  const prevSpent = getBucketSpent(prevMonth, bucketId);
+  const prevRollover = getRolloverAmount(prevMonth, bucketId, depth + 1);
+  const prevBudget = bucket.budget + prevRollover;
+  const leftover = prevBudget - prevSpent;
+  return leftover > 0 ? leftover : 0;
+}
+
+function getEffectiveBudget(monthKey, bucketId) {
+  const bucket = state.buckets.find(b => b.id === bucketId);
+  if (!bucket) return 0;
+  return bucket.budget + getRolloverAmount(monthKey, bucketId);
+}
+
+function getTotalBudget(monthKey) {
+  return state.buckets.reduce((sum, b) => sum + getEffectiveBudget(monthKey, b.id), 0);
+}
+
+function getTotalSpent(monthKey) {
+  return state.buckets.reduce((sum, b) => sum + getBucketSpent(monthKey, b.id), 0);
+}
+
+// Render
+function render() {
+  document.getElementById('current-month').textContent = monthKeyToLabel(state.currentMonth);
+  renderSummary();
+  renderTabs();
+  renderContent();
+}
+
+function renderSummary() {
+  const spent = getTotalSpent(state.currentMonth);
+  const remaining = state.income - spent;
+  document.getElementById('income-display').textContent = formatMoney(state.income);
+  document.getElementById('spent-display').textContent = formatMoney(spent);
+  const remainingEl = document.getElementById('remaining-display');
+  remainingEl.textContent = formatMoney(remaining);
+  remainingEl.className = 'summary-value remaining ' + (remaining >= 0 ? 'positive' : 'negative');
+}
+
+function renderTabs() {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.view === state.view);
+  });
+}
+
+function renderContent() {
+  const container = document.getElementById('content');
+  if (state.view === 'buckets') {
+    container.innerHTML = renderBuckets();
+    attachBucketHandlers();
+  } else if (state.view === 'compare') {
+    container.innerHTML = renderCompare();
+  } else if (state.view === 'settings') {
+    container.innerHTML = renderSettings();
+    attachSettingsHandlers();
+  }
+}
+
+function renderBuckets() {
+  let html = '';
+  state.buckets.forEach(bucket => {
+    const spent = getBucketSpent(state.currentMonth, bucket.id);
+    const rollover = getRolloverAmount(state.currentMonth, bucket.id);
+    const effectiveBudget = bucket.budget + rollover;
+    const pct = effectiveBudget > 0 ? Math.min(100, (spent / effectiveBudget) * 100) : 0;
+    const remaining = effectiveBudget - spent;
+    const barClass = pct >= 100 ? 'danger' : pct >= 80 ? 'warning' : '';
+    const isExpanded = state.expandedBucket === bucket.id;
+    const monthExp = getMonthExpenses(state.currentMonth);
+    const items = monthExp[bucket.id] || [];
+
+    html += `
+      <div class="bucket ${isExpanded ? 'expanded' : ''}" data-bucket="${bucket.id}">
+        <div class="bucket-header" data-toggle="${bucket.id}">
+          <div class="bucket-title-group">
+            <span class="bucket-icon">${bucket.icon}</span>
+            <span class="bucket-name">${escapeHtml(bucket.name)}</span>
+            ${bucket.rollover ? '<span class="rollover-badge">rollover</span>' : ''}
+          </div>
+          <div class="bucket-amounts">
+            <span class="spent">${formatMoney(spent)}</span>
+            <span> / ${formatMoney(effectiveBudget)}</span>
+          </div>
+        </div>
+        <div class="progress">
+          <div class="progress-bar ${barClass}" style="width: ${pct}%"></div>
+        </div>
+        <div class="progress-meta">
+          <span>${rollover > 0 ? `+${formatMoney(rollover)} from last month` : ''}</span>
+          <span>${remaining >= 0 ? formatMoney(remaining) + ' left' : formatMoney(Math.abs(remaining)) + ' over'}</span>
+        </div>
+        <div class="bucket-details">
+          ${bucket.subCats && bucket.subCats.length > 0 ? `
+            <div class="sub-categories">
+              <div class="sub-cat">Sub-categories: ${bucket.subCats.join(' · ')}</div>
+            </div>
+          ` : ''}
+          ${items.length > 0 ? `
+            <div class="expense-list">
+              ${items.map((item, idx) => `
+                <div class="expense-item">
+                  <div class="expense-info">
+                    <div class="expense-note">${escapeHtml(item.note || '—')}</div>
+                    <div class="expense-meta">${item.date}</div>
+                  </div>
+                  <span class="expense-amount">${formatMoney(item.amount)}</span>
+                  <button class="delete-btn" data-delete="${bucket.id}:${idx}">×</button>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+          <div class="add-expense">
+            <input type="number" placeholder="Amount" step="0.01" class="amount-input" data-bucket-amount="${bucket.id}" />
+            <input type="date" class="date-input" data-bucket-date="${bucket.id}" value="${new Date().toISOString().split('T')[0]}" />
+            <input type="text" placeholder="Note (optional)" class="note-input" data-bucket-note="${bucket.id}" />
+            <button data-add="${bucket.id}">Add expense</button>
+          </div>
+          <div class="bucket-config">
+            <label>Budget: $<input type="number" value="${bucket.budget}" data-config-budget="${bucket.id}" /></label>
+            <label><input type="checkbox" ${bucket.rollover ? 'checked' : ''} data-config-rollover="${bucket.id}" /> Rollover</label>
+            <button class="delete-bucket" data-delete-bucket="${bucket.id}">Remove</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  html += `<button class="add-bucket" id="add-bucket-btn">+ Add new bucket</button>`;
+  return html;
+}
+
+function renderCompare() {
+  // Last 6 months
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    months.push(shiftMonth(state.currentMonth, -i));
+  }
+
+  let html = '<div class="compare-table">';
+  html += '<div class="compare-row compare-header"><span>Month</span><span class="num col-budget">Budget</span><span class="num">Spent</span><span class="num">Saved</span></div>';
+
+  months.forEach(monthKey => {
+    const spent = getTotalSpent(monthKey);
+    const budget = getTotalBudget(monthKey);
+    const saved = state.income - spent;
+    const savedClass = saved >= 0 ? 'positive' : 'negative';
+    const hasData = (state.expenses[monthKey] && Object.keys(state.expenses[monthKey]).length > 0);
+    html += `
+      <div class="compare-row">
+        <span>${monthKeyToLabel(monthKey)}</span>
+        <span class="num col-budget">${formatMoney(budget)}</span>
+        <span class="num">${hasData ? formatMoney(spent) : '—'}</span>
+        <span class="num" style="color: ${hasData ? (saved >= 0 ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'}">${hasData ? formatMoney(saved) : '—'}</span>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  html += '<div class="empty-state" style="font-size: 12px; margin-top: 16px;">Showing last 6 months. Navigate to past months above to add historical data.</div>';
+  return html;
+}
+
+function renderSettings() {
+  return `
+    <div class="settings-section">
+      <h3>Monthly Income</h3>
+      <div class="settings-row">
+        <label>Take-home per month</label>
+        <input type="number" id="income-input" value="${state.income}" step="100" />
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>Backup</h3>
+      <div class="settings-row">
+        <label>Download all data as backup</label>
+        <button class="delete-bucket" id="export-data" style="color: var(--primary);">Export</button>
+      </div>
+      <div class="settings-row">
+        <label>Restore from backup file</label>
+        <button class="delete-bucket" id="import-data" style="color: var(--primary);">Import</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none" />
+    </div>
+    <div class="settings-section">
+      <h3>Reset</h3>
+      <div class="settings-row">
+        <label>Clear current month expenses</label>
+        <button class="delete-bucket" id="clear-month">Clear ${monthKeyToLabel(state.currentMonth)}</button>
+      </div>
+      <div class="settings-row">
+        <label>Reset everything to defaults</label>
+        <button class="delete-bucket" id="reset-all">Reset all</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>About</h3>
+      <p style="font-size: 13px; color: var(--text-dim); line-height: 1.6;">
+        Buckets carry the same template across months. Add expenses as they happen — your remaining amount updates in real time.
+        Rollover buckets carry unspent money to next month. Export occasionally to back up your data.
+      </p>
+    </div>
+  `;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Event handlers
+function attachBucketHandlers() {
+  // Toggle bucket
+  document.querySelectorAll('[data-toggle]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      const id = el.dataset.toggle;
+      state.expandedBucket = state.expandedBucket === id ? null : id;
+      renderContent();
+    });
+  });
+
+  // Add expense
+  document.querySelectorAll('[data-add]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const bucketId = btn.dataset.add;
+      const amountEl = document.querySelector(`[data-bucket-amount="${bucketId}"]`);
+      const dateEl = document.querySelector(`[data-bucket-date="${bucketId}"]`);
+      const noteEl = document.querySelector(`[data-bucket-note="${bucketId}"]`);
+      const amount = parseFloat(amountEl.value);
+      if (!amount || amount <= 0) { showToast('Enter an amount'); return; }
+      const date = dateEl.value;
+      const note = noteEl.value.trim();
+
+      if (!state.expenses[state.currentMonth]) state.expenses[state.currentMonth] = {};
+      if (!state.expenses[state.currentMonth][bucketId]) state.expenses[state.currentMonth][bucketId] = [];
+      state.expenses[state.currentMonth][bucketId].push({ amount, date, note });
+
+      amountEl.value = '';
+      noteEl.value = '';
+      saveState();
+      render();
+      showToast('Added');
+    });
+  });
+
+  // Delete expense
+  document.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const [bucketId, idx] = btn.dataset.delete.split(':');
+      state.expenses[state.currentMonth][bucketId].splice(parseInt(idx), 1);
+      saveState();
+      render();
+    });
+  });
+
+  // Config changes
+  document.querySelectorAll('[data-config-budget]').forEach(input => {
+    input.addEventListener('change', async (e) => {
+      const id = input.dataset.configBudget;
+      const bucket = state.buckets.find(b => b.id === id);
+      if (bucket) {
+        bucket.budget = parseFloat(input.value) || 0;
+        saveState();
+        render();
+      }
+    });
+    input.addEventListener('click', (e) => e.stopPropagation());
+  });
+
+  document.querySelectorAll('[data-config-rollover]').forEach(input => {
+    input.addEventListener('change', async (e) => {
+      const id = input.dataset.configRollover;
+      const bucket = state.buckets.find(b => b.id === id);
+      if (bucket) {
+        bucket.rollover = input.checked;
+        saveState();
+        render();
+      }
+    });
+    input.addEventListener('click', (e) => e.stopPropagation());
+  });
+
+  // Delete bucket
+  document.querySelectorAll('[data-delete-bucket]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.deleteBucket;
+      if (confirm('Remove this bucket from all months? Expenses already logged will be removed.')) {
+        state.buckets = state.buckets.filter(b => b.id !== id);
+        Object.keys(state.expenses).forEach(monthKey => {
+          delete state.expenses[monthKey][id];
+        });
+        state.expandedBucket = null;
+        saveState();
+        render();
+        showToast('Bucket removed');
+      }
+    });
+  });
+
+  // Add bucket
+  const addBtn = document.getElementById('add-bucket-btn');
+  if (addBtn) {
+    addBtn.addEventListener('click', async () => {
+      const name = prompt('Bucket name:');
+      if (!name) return;
+      const budget = parseFloat(prompt('Monthly budget ($):', '100')) || 0;
+      const id = 'custom-' + Date.now();
+      state.buckets.push({ id, name, icon: '✦', budget, rollover: false, subCats: [] });
+      state.expandedBucket = id;
+      saveState();
+      render();
+    });
+  }
+
+  // Prevent form clicks from collapsing
+  document.querySelectorAll('.bucket-details, .add-expense, .bucket-config').forEach(el => {
+    el.addEventListener('click', (e) => e.stopPropagation());
+  });
+}
+
+function attachSettingsHandlers() {
+  document.getElementById('income-input').addEventListener('change', (e) => {
+    state.income = parseFloat(e.target.value) || 0;
+    saveState();
+    renderSummary();
+  });
+
+  document.getElementById('export-data').addEventListener('click', () => {
+    exportData();
+  });
+
+  document.getElementById('import-data').addEventListener('click', () => {
+    document.getElementById('import-file').click();
+  });
+
+  document.getElementById('import-file').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) importData(file);
+  });
+
+  document.getElementById('clear-month').addEventListener('click', () => {
+    if (confirm(`Clear all expenses for ${monthKeyToLabel(state.currentMonth)}?`)) {
+      delete state.expenses[state.currentMonth];
+      saveState();
+      render();
+      showToast('Month cleared');
+    }
+  });
+
+  document.getElementById('reset-all').addEventListener('click', () => {
+    if (confirm('Reset everything? This deletes all expenses and resets buckets to defaults.')) {
+      state.buckets = JSON.parse(JSON.stringify(DEFAULT_BUCKETS));
+      state.expenses = {};
+      state.income = DEFAULT_INCOME;
+      saveState();
+      render();
+      showToast('Reset complete');
+    }
+  });
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    state.view = tab.dataset.view;
+    renderContent();
+    renderTabs();
+  });
+});
+
+// Month nav
+document.getElementById('prev-month').addEventListener('click', () => {
+  state.currentMonth = shiftMonth(state.currentMonth, -1);
+  state.expandedBucket = null;
+  render();
+});
+
+document.getElementById('next-month').addEventListener('click', () => {
+  state.currentMonth = shiftMonth(state.currentMonth, 1);
+  state.expandedBucket = null;
+  render();
+});
+
+// Initialize
+try {
+  loadState();
+  render();
+} catch (e) {
+  console.error('Init failed:', e);
+  document.getElementById('content').innerHTML = '<div class="empty-state">Something went wrong. Try refreshing.</div>';
+}
+</script>
+
+</body>
+</html>
